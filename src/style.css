@@ -1,0 +1,95 @@
+:root {
+  --bg-elem: #dbdbdb;
+  --bg-elem-heavy: #b1b1b1;
+  --light-hover: #c1ebffe0;
+
+  --shadow: 0px 0px 4px 1px rgba(34, 60, 80, 0.3);
+  --border: 2px solid #c1ebffe0;
+}
+
+html {
+  font-size: 10px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  max-width: 1280px;
+  margin: 0 auto;
+  font-size: 1.6rem;
+}
+
+.app {
+  width: 100%;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.search__form {
+}
+
+.form {
+  width: 60%;
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem 2rem;
+  background-color: var(--bg-elem);
+  border-radius: 0.5rem;
+  gap: 2rem;
+}
+
+.form__input {
+  width: 100%;
+  align-self: center;
+  font-size: 1.8rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  outline: 0px solid var(--bg-elem);
+  border-radius: 0.3rem;
+  transition:
+    outline 0.2s,
+    box-shadow 0.2s;
+}
+
+.form__input:hover {
+  outline: 1px solid var(--bg-elem-heavy);
+  box-shadow: var(--shadow);
+}
+
+.form__input:focus {
+  outline: var(--border);
+}
+
+.form__btn-submit {
+  padding: 0.5rem;
+  max-width: clamp(
+    30px,
+    calc(30px + (70 - 30) * ((100vw - 320px) / (1280 - 320))),
+    70px
+  );
+  width: 100%;
+  font-size: 1.8rem;
+  background-color: white;
+  cursor: pointer;
+  border: none;
+  border-radius: 0.3rem;
+  background-image: url(./assets/images/icons8-поиск-48.png);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  transition: box-shadow 0.3s;
+}
+
+.form__btn-submit:hover {
+  box-shadow: var(--shadow);
+}
+
+.wrapper-podcasts {
+  width: 100%;
+}
