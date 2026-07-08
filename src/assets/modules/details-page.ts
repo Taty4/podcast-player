@@ -63,7 +63,7 @@ export async function renderDetailsPodcastPage(
 
   if (id) {
     const listEpisodes = await getSearchedPodcast(
-      `https://itunes.apple.com/lookup?id=${encodeURIComponent(Number(id))}&entity=podcastEpisode`,
+      `/.netlify/functions/search?id=${encodeURIComponent(id)}&entity=podcastEpisode&limit=20&`,
     );
 
     const podcastInfo = listEpisodes[0];
@@ -90,7 +90,7 @@ function renderEpisodes(episodes: ResultsApi[], container: HTMLDivElement) {
   const onlyEpisodes = episodes.slice(1);
   onlyEpisodes.forEach((episode, index) => {
     const card = createElement("div", {
-      className: "podcast-body episod",
+      className: "podcast-body__episode episod",
     });
 
     if (index === 0) {

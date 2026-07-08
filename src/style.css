@@ -193,6 +193,7 @@ body {
 
 .podcast-body {
   display: flex;
+  width: 100%;
 }
 
 .podcast-body__container-episodes {
@@ -200,6 +201,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  width: 100%;
 }
 
 /* .podcast-body__container-description {
@@ -211,6 +213,7 @@ body {
 } */
 
 .episod {
+  width: 100%;
   display: flex;
   gap: 1rem;
   cursor: pointer;

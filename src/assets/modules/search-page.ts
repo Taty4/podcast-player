@@ -97,6 +97,7 @@ export interface ResultsApi {
   description?: string;
   trackViewUrl: string;
   wrapperType: "podcastEpisode" | "track";
+  artworkUrl100: string;
 }
 
 export interface ResponsAPI {
@@ -105,10 +106,11 @@ export interface ResponsAPI {
 
 async function getBestPodcasts() {
   try {
-    const url = "/.netlify/functions/search?term=beautiful";
+    const url = `/.netlify/functions/search?term=${encodeURIComponent("javascript")}&media=podcast&limit=25`;
     const response = await fetch(url);
 
     const data = (await response.json()) as ResponsAPI;
+    data.results.map((res) => console.log(res.collectionId));
 
     console.log("Ответ от сервера с результатами лучших: ", data.results);
     return data.results;
@@ -156,7 +158,7 @@ async function handleSearchInput() {
     } else {
       if (term) {
         result = await getSearchedPodcast(
-          `/.netlify/functions/search?term=${encodeURIComponent(term)}`,
+          `/.netlify/functions/search?term=${encodeURIComponent(term)}&media=podcast&limit=25`,
         );
         createCardsPodcasts(result);
       }
@@ -177,7 +179,7 @@ function createCardsPodcasts(podcasts: ResultsApi[]) {
       });
 
       const imageCard = createElement("img", { className: "card__img" });
-      imageCard.src = podcast.artworkUrl600;
+      imageCard.src = podcast.artworkUrl100;
       card.dataset.idPodcast = `${podcast.collectionId}`;
 
       const titleCard = createElement("p", {
