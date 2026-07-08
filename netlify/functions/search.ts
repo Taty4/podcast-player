@@ -1,8 +1,8 @@
 export const handler = async (event: any) => {
-  const query = event.queryStringParameters?.term;
+  const query = event.queryStringParameters?.term || "";
 
   const response = await fetch(
-    "https://itunes.apple.com/search?term=${query}&media=podcast&limit=20",
+    `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=podcast&limit=20`,
   );
 
   const data = await response.json();
