@@ -278,8 +278,8 @@ body {
   background-color: var(--accecnt-color-light);
 }
 
-.episod__duration {
-}
+/* .episod__duration {
+} */
 
 .episod__date {
   display: flex;

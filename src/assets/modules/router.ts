@@ -8,7 +8,7 @@ type Routes = {
 
 const routes: Routes = {
   "/": renderSearchPage,
-  "/playlist": renderDetailsPodcastPage,
+  "/playlist": renderPlayListPage,
   "/details": renderDetailsPodcastPage,
 };
 

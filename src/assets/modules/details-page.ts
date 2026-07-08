@@ -1,6 +1,6 @@
-import { router } from "./router";
+/* import { router } from "./router"; */
 import { getSearchedPodcast, createElement } from "./search-page";
-import type { ResponsAPI, ResultsApi } from "./search-page";
+import type { ResultsApi } from "./search-page";
 
 export async function renderDetailsPodcastPage(
   app: HTMLDivElement,
@@ -89,10 +89,6 @@ export async function renderDetailsPodcastPage(
 function renderEpisodes(episodes: ResultsApi[], container: HTMLDivElement) {
   const onlyEpisodes = episodes.slice(1);
   onlyEpisodes.forEach((episode, index) => {
-    const fullSDec = document.querySelector<HTMLDivElement>(
-      ".podcast-body__container-description",
-    );
-
     const card = createElement("div", {
       className: "podcast-body episod",
     });
