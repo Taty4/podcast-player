@@ -132,8 +132,8 @@ body {
 
 .card__img {
   display: block;
-  width: 250px;
-  height: 250px;
+  width: 100%;
+  height: auto;
   border-radius: 1rem;
 }
 
@@ -192,8 +192,11 @@ body {
 /* Episodes */
 
 .podcast-body {
+  margin-top: 2rem;
   display: flex;
+  flex-direction: column;
   width: 100%;
+  gap: 2rem;
 }
 
 .podcast-body__container-episodes {
@@ -203,14 +206,6 @@ body {
   gap: 1rem;
   width: 100%;
 }
-
-/* .podcast-body__container-description {
-  max-width: 40%;
-  width: 100%;
-  padding: 2rem;
-  background-color: var(--accecnt-color);
-  border-radius: 1rem;
-} */
 
 .episod {
   width: 100%;
@@ -250,6 +245,10 @@ body {
 
 .episod__description {
   font-size: 1.4rem;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
 }
 
 .episod__meta {
@@ -288,4 +287,12 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.player {
+  width: 100%;
+  padding: 2rem 3rem;
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--light-hover);
 }

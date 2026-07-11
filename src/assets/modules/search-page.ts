@@ -22,7 +22,8 @@ export async function renderSearchPage(app: HTMLDivElement) {
       wrapperCards.replaceChildren();
       if (podcasts) {
         podcasts.forEach((podcast) => {
-          wrapperCards.append(createCardPodcast(podcast));
+          const card = createCardPodcast(podcast);
+          wrapperCards.append(card);
         });
       }
     }, 3000);
@@ -34,11 +35,13 @@ export async function renderSearchPage(app: HTMLDivElement) {
 
   btnSubmitSearch.addEventListener("click", async (e) => {
     e.preventDefault();
+    clearTimeout(timerId);
     const podcasts = await handleSearchInput();
     wrapperCards.replaceChildren();
     if (podcasts) {
       podcasts.forEach((podcast) => {
-        wrapperCards.append(createCardPodcast(podcast));
+        const card = createCardPodcast(podcast);
+        wrapperCards.append(card);
       });
     }
   });
@@ -63,7 +66,8 @@ export async function renderSearchPage(app: HTMLDivElement) {
   const bestPodcasts = await getBestPodcasts();
 
   bestPodcasts.forEach((podcast) => {
-    wrapperCards.append(createCardPodcast(podcast));
+    const card = createCardPodcast(podcast);
+    wrapperCards.append(card);
   });
 
   buttonPlaylist.addEventListener("click", () => {
@@ -113,13 +117,8 @@ export interface PodcastTrend {
   artWork: string;
 }
 
-export interface Podcast {
-  image: string;
-  id: number;
-  author: string;
-  title: string;
-  trendScore: number;
-  artWork: string;
+export interface APIResponseTrends {
+  feeds: PodcastTrend[];
 }
 
 export interface Episode {
@@ -138,20 +137,17 @@ export interface APIResponseEpisodes {
   items: Episode[];
 }
 
-export interface APIResponseTrends {
-  feeds: PodcastTrend[];
+export interface Podcast {
+  image: string;
+  artWork: string;
+  id: number;
+  author: string;
+  title: string;
+  description: string;
 }
-
 export interface APIResponsePodcast {
-  feeds: Podcast[];
+  feed: Podcast;
 }
-
-/* export interface APIRespons {
-  feeds: Podcast[];
-} */
-/* export interface ResponsAPISearchedPodcasts {
-  feeds: SearchedPodcast[];
-} */
 
 async function getBestPodcasts(): Promise<PodcastTrend[]> {
   try {
@@ -160,7 +156,7 @@ async function getBestPodcasts(): Promise<PodcastTrend[]> {
     const response = await fetch(url);
 
     const data: APIResponseTrends = await response.json();
-    console.log(data);
+    console.log("Результата поиска лучших подкастов: ", data.feeds);
     return data.feeds;
   } catch (error) {
     console.log("error");
@@ -214,7 +210,7 @@ export async function getEpisodesById(url: string): Promise<Episode[]> {
   }
 }
 
-export async function getPodcastById(url: string): Promise<APIResponsePodcast> {
+export async function getPodcastById(url: string): Promise<Podcast> {
   try {
     const response = await fetch(url);
 
@@ -229,7 +225,7 @@ export async function getPodcastById(url: string): Promise<APIResponsePodcast> {
     } */
 
     console.log("Ответ от сервера c результатом поиска подкаста: ", data);
-    return data;
+    return data.feed;
   } catch (error) {
     console.log("Ошибка запроса или ничего не найдено");
     throw error;
@@ -263,7 +259,7 @@ function createCardPodcast(podcast: PodcastTrend | PodcastSearch) {
   });
 
   const imageCard = createElement("img", { className: "card__img" });
-  setPodcastImage(imageCard, podcast);
+  imageCard.src = defaultImage;
   imageCard.loading = "lazy";
   card.dataset.idPodcast = `${podcast.id}`;
 
@@ -280,45 +276,59 @@ function createCardPodcast(podcast: PodcastTrend | PodcastSearch) {
   card.append(imageCard, titleCard, authorText);
 
   card.addEventListener("click", () => handleCardClick(podcast));
+  loadImage(imageCard, podcast, 250);
   return card;
 }
 
-export function setPodcastImage(
+export async function loadImage(
   img: HTMLImageElement,
-  podcast: PodcastTrend | PodcastSearch,
+  podcast: PodcastTrend | Episode | PodcastSearch,
+  size: number,
 ) {
-  const sources = [podcast.artWork, podcast.image, defaultImage];
+  const src = await getSmallValidImg(podcast.image, podcast.artWork, size);
 
-  let index = 0;
-
-  img.src = sources[index];
-  /*   let optimazedURL = sources[index]; */
-
-  img.onerror = () => {
-    index++;
-
-    if (index < sources.length) {
-      img.src = sources[index];
-    }
-  };
-}
-
-export function setEpisodeImage(img: HTMLImageElement, podcast: Episode) {
-  const sources = [podcast.image, podcast.feedImage, defaultImage];
-  let index = 0;
-  img.src = sources[index];
-  /*   let optimazedURL = sources[index]; */
-
-  img.onerror = () => {
-    index++;
-
-    if (index < sources.length) {
-      img.src = sources[index];
-    }
-  };
+  img.src = src;
 }
 
 function handleCardClick(podcast: PodcastSearch | PodcastTrend) {
   const id = podcast.id;
   router.navigate(`/details/${id}`);
+}
+
+/**
+ * Проверяет ссылки по очереди и возвращает первую рабочую,
+ * либо дефолтную, если обе ссылки битые.
+ *
+ * @param url1 - Первая ссылка для проверки
+ * @param url2 - Вторая (запасная) ссылка
+ * @returns Рабочий URL картинки
+ */
+export async function getSmallValidImg(
+  url1: string,
+  url2: string,
+  size: number,
+): Promise<string> {
+  // Вспомогательная функция для проверки одной картинки
+  // Явно указываем, что промис возвращает boolean
+  const checkImage = (src: string, size: number): Promise<boolean> => {
+    return new Promise<boolean>((resolve) => {
+      const img: HTMLImageElement = new Image();
+      img.src = `https://wsrv.nl?url=${encodeURIComponent(src)}&w=${size}&fit=cover`;
+      img.onload = () => resolve(true); // Ссылка рабочая
+      img.onerror = () => resolve(false); // Ссылка битая
+    });
+  };
+
+  // 1. Проверяем первую картинку
+  const isFirstValid: boolean = await checkImage(url1, size);
+  if (isFirstValid)
+    return `https://wsrv.nl?url=${encodeURIComponent(url1)}&w=${size}&fit=cover`;
+
+  // 2. Если первая битая, проверяем вторую
+  const isSecondValid: boolean = await checkImage(url2, size);
+  if (isSecondValid)
+    return `https://wsrv.nl?url=${encodeURIComponent(url2)}&w=${size}&fit=cover`;
+
+  // 3. Если обе битые, возвращаем дефолтную
+  return defaultImage;
 }

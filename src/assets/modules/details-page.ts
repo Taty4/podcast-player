@@ -1,17 +1,18 @@
 /* import { router } from "./router"; */
+import defaultImage from "../images/default-cover.png";
 import {
   getEpisodesById,
   createElement,
-  setEpisodeImage,
   getPodcastById,
+  loadImage,
 } from "./search-page";
-import type { APIResponseEpisodes, Episode } from "./search-page";
-
+import type { Episode } from "./search-page";
+/* import { player } from "./player"; */
 export async function renderDetailsPodcastPage(
   app: HTMLDivElement,
   id?: string,
 ) {
-  /*   const buttonSearch: HTMLButtonElement = document.createElement("button");
+  /*  const buttonSearch: HTMLButtonElement = document.createElement("button");
   buttonSearch.textContent = "Перейти на страницу поиска";
   buttonSearch.dataset.page = "/";
 
@@ -56,11 +57,11 @@ export async function renderDetailsPodcastPage(
     className: "podcast-body__container-episodes",
   });
 
-  const containerDescription = createElement("div", {
-    className: "podcast-body__container-description",
+  const podcastDescription = createElement("p", {
+    className: "podcast-body__description",
   });
 
-  podcastBody.append(containerEpisodes, containerDescription);
+  podcastBody.append(podcastDescription, containerEpisodes);
 
   wrapperInfoHeader.append(type, namePodcast, author);
   header.append(imgHeader, wrapperInfoHeader);
@@ -77,18 +78,18 @@ export async function renderDetailsPodcastPage(
     ]);
 
     namePodcast.textContent = podcast.title;
-    /*     if (podcastInfo.artistName) {
-      author.textContent = podcastInfo.artistName;
-    } */
+    author.textContent = podcast.author;
+    podcastDescription.textContent = podcast.description;
 
     const imgPodcast = createElement("img", {
       className: "podcast-header__image",
     });
-    imgPodcast.src = podcast.image;
+    imgPodcast.src = defaultImage;
 
     imgHeader.append(imgPodcast);
+    loadImage(imgPodcast, podcast, 400);
 
-    listEpisodes.forEach((episode) => {
+    listEpisodes.forEach(async (episode) => {
       const cardEpisode = renderEpisode(episode);
       containerEpisodes.append(cardEpisode);
     });
@@ -105,9 +106,8 @@ function renderEpisode(episode: Episode) {
   const smallImg = createElement("img", {
     className: "episod__image",
   });
-  if (episode.image) {
-    setEpisodeImage(smallImg, episode);
-  }
+  smallImg.src = defaultImage;
+  smallImg.loading = "lazy";
 
   const infoWrapper = createElement("div", {
     className: "episod__info-wrapper",
@@ -118,10 +118,12 @@ function renderEpisode(episode: Episode) {
   });
   titleEpisode.textContent = episode.title;
 
-  const description = createElement("p", {
+  const description = createElement("div", {
     className: "episod__description",
   });
-  description.innerHTML = episode.description;
+  const temp = createElement("div");
+  temp.innerHTML = episode.description;
+  description.textContent = temp.textContent || "";
 
   const metaEpisode = createElement("div", {
     className: "episod__meta",
@@ -144,13 +146,14 @@ function renderEpisode(episode: Episode) {
   const episodDate = createElement("p", {
     className: "episod__date",
   });
-
   episodDate.textContent = episode.datePublishedPretty;
 
   card.append(smallImg, infoWrapper);
   infoWrapper.append(titleEpisode, description, metaEpisode);
   episodMetaLeft.append(episodeBtnPlay, episodeDuration);
   metaEpisode.append(episodMetaLeft, episodDate);
+
+  loadImage(smallImg, episode, 160);
   return card;
 }
 
