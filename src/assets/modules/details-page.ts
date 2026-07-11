@@ -1,6 +1,11 @@
 /* import { router } from "./router"; */
-import { getSearchedPodcast, createElement } from "./search-page";
-import type { ResultsApi } from "./search-page";
+import {
+  getEpisodesById,
+  createElement,
+  setEpisodeImage,
+  getPodcastById,
+} from "./search-page";
+import type { APIResponseEpisodes, Episode } from "./search-page";
 
 export async function renderDetailsPodcastPage(
   app: HTMLDivElement,
@@ -62,115 +67,103 @@ export async function renderDetailsPodcastPage(
   app.append(header, podcastBody);
 
   if (id) {
-    const listEpisodes = await getSearchedPodcast(
-      `/.netlify/functions/search?id=${encodeURIComponent(id)}&entity=podcastEpisode&limit=20&`,
-    );
+    const [podcast, listEpisodes] = await Promise.all([
+      getPodcastById(
+        `/.netlify/functions/search?endpoint=/podcasts/byfeedid?id=${encodeURIComponent(id)}&pretty=true`,
+      ),
+      getEpisodesById(
+        `/.netlify/functions/search?endpoint=episodes/byfeedid&id=${encodeURIComponent(id)}&max=100&pretty=true`,
+      ),
+    ]);
 
-    const podcastInfo = listEpisodes[0];
-
-    namePodcast.textContent = podcastInfo.collectionName;
-    if (podcastInfo.artistName) {
+    namePodcast.textContent = podcast.title;
+    /*     if (podcastInfo.artistName) {
       author.textContent = podcastInfo.artistName;
-    }
+    } */
 
     const imgPodcast = createElement("img", {
       className: "podcast-header__image",
     });
-    imgPodcast.src = podcastInfo.artworkUrl600;
+    imgPodcast.src = podcast.image;
 
     imgHeader.append(imgPodcast);
 
-    renderEpisodes(listEpisodes, containerEpisodes);
+    listEpisodes.forEach((episode) => {
+      const cardEpisode = renderEpisode(episode);
+      containerEpisodes.append(cardEpisode);
+    });
   } else {
     console.log("Неверный адрес страницы");
   }
 }
 
-function renderEpisodes(episodes: ResultsApi[], container: HTMLDivElement) {
-  const onlyEpisodes = episodes.slice(1);
-  onlyEpisodes.forEach((episode, index) => {
-    const card = createElement("div", {
-      className: "podcast-body__episode episod",
-    });
-
-    if (index === 0) {
-      card.classList.add("active");
-      /*       if (fullSDec && episode.description) {
-        fullSDec.textContent = episode.description;
-      } */
-    }
-
-    const smallImg = createElement("img", {
-      className: "episod__image",
-    });
-    if (episode.artworkUrl160) {
-      smallImg.src = episode.artworkUrl160;
-    }
-
-    const infoWrapper = createElement("div", {
-      className: "episod__info-wrapper",
-    });
-
-    const titleEpisode = createElement("h3", {
-      className: "episod__title",
-    });
-    titleEpisode.textContent = episode.trackName;
-
-    const description = createElement("p", {
-      className: "episod__description",
-    });
-    if (episode.shortDescription && episode.shortDescription !== "") {
-      description.textContent = episode.shortDescription;
-    } else if (!episode.shortDescription || episode.shortDescription === "") {
-      if (episode.description && episode.description !== "") {
-        description.textContent = `${episode.description.slice(0, 320)}...`;
-      }
-    }
-
-    const metaEpisode = createElement("div", {
-      className: "episod__meta",
-    });
-
-    const episodMetaLeft = createElement("div", {
-      className: "episod__meta-left",
-    });
-
-    const episodeBtnPlay = createElement("button", {
-      className: "episod__btn-play",
-    });
-    episodeBtnPlay.textContent = "▶";
-
-    const episodeDuration = createElement("p", {
-      className: "episod__duration",
-    });
-    episodeDuration.textContent = getFormatDuration(episode.trackTimeMillis);
-
-    const episodDate = createElement("p", {
-      className: "episod__date",
-    });
-
-    if (episode.releaseDate) {
-      episodDate.textContent = getFormatDateRealize(episode.releaseDate);
-    }
-
-    card.append(smallImg, infoWrapper);
-    infoWrapper.append(titleEpisode, description, metaEpisode);
-    episodMetaLeft.append(episodeBtnPlay, episodeDuration);
-    metaEpisode.append(episodMetaLeft, episodDate);
-    container.append(card);
+function renderEpisode(episode: Episode) {
+  const card = createElement("div", {
+    className: "podcast-body__episode episod",
   });
+
+  const smallImg = createElement("img", {
+    className: "episod__image",
+  });
+  if (episode.image) {
+    setEpisodeImage(smallImg, episode);
+  }
+
+  const infoWrapper = createElement("div", {
+    className: "episod__info-wrapper",
+  });
+
+  const titleEpisode = createElement("h3", {
+    className: "episod__title",
+  });
+  titleEpisode.textContent = episode.title;
+
+  const description = createElement("p", {
+    className: "episod__description",
+  });
+  description.innerHTML = episode.description;
+
+  const metaEpisode = createElement("div", {
+    className: "episod__meta",
+  });
+
+  const episodMetaLeft = createElement("div", {
+    className: "episod__meta-left",
+  });
+
+  const episodeBtnPlay = createElement("button", {
+    className: "episod__btn-play",
+  });
+  episodeBtnPlay.textContent = "▶";
+
+  const episodeDuration = createElement("p", {
+    className: "episod__duration",
+  });
+  episodeDuration.textContent = getFormatDuration(episode.duration);
+
+  const episodDate = createElement("p", {
+    className: "episod__date",
+  });
+
+  episodDate.textContent = episode.datePublishedPretty;
+
+  card.append(smallImg, infoWrapper);
+  infoWrapper.append(titleEpisode, description, metaEpisode);
+  episodMetaLeft.append(episodeBtnPlay, episodeDuration);
+  metaEpisode.append(episodMetaLeft, episodDate);
+  return card;
 }
 
-const getFormatDuration = (milisec: number) => {
-  const sec = Math.round(milisec / 1000);
-
-  let min = Math.floor(sec / 60);
-  const secunds = sec - min * 60;
-
-  return `${min.toString().padStart(2, "0")} min ${secunds.toString().padStart(2, "0")} sec`;
+const getFormatDuration = (durationSec: number | null) => {
+  if (durationSec) {
+    let min = Math.floor(durationSec / 60);
+    const secunds = durationSec - min * 60;
+    return `${min.toString().padStart(2, "0")} min ${secunds.toString().padStart(2, "0")} sec`;
+  }
+  return "00 min 00 sec";
 };
 
-const getFormatDateRealize = (stringDate: string) => {
+/* const getFormatDateRealize = (stringDate: string) => {
   const date = new Date(stringDate);
 
   const stringMonth = date.toLocaleDateString("ru-RU", {
@@ -180,4 +173,4 @@ const getFormatDateRealize = (stringDate: string) => {
 
   const year = date.getFullYear().toString();
   return `${stringMonth} ${year}`;
-};
+}; */

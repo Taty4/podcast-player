@@ -1,4 +1,5 @@
 import { router } from "./router";
+import defaultImage from "../images/default-cover.png";
 
 let timerId: number | undefined;
 
@@ -16,8 +17,14 @@ export async function renderSearchPage(app: HTMLDivElement) {
 
   searchInput.addEventListener("input", () => {
     clearTimeout(timerId);
-    timerId = window.setTimeout(() => {
-      handleSearchInput();
+    timerId = window.setTimeout(async () => {
+      const podcasts = await handleSearchInput();
+      wrapperCards.replaceChildren();
+      if (podcasts) {
+        podcasts.forEach((podcast) => {
+          wrapperCards.append(createCardPodcast(podcast));
+        });
+      }
     }, 3000);
   });
 
@@ -25,9 +32,15 @@ export async function renderSearchPage(app: HTMLDivElement) {
     className: "form__btn-submit",
   });
 
-  btnSubmitSearch.addEventListener("click", (e) => {
+  btnSubmitSearch.addEventListener("click", async (e) => {
     e.preventDefault();
-    handleSearchInput();
+    const podcasts = await handleSearchInput();
+    wrapperCards.replaceChildren();
+    if (podcasts) {
+      podcasts.forEach((podcast) => {
+        wrapperCards.append(createCardPodcast(podcast));
+      });
+    }
   });
 
   searchForm.append(searchInput, btnSubmitSearch);
@@ -37,29 +50,24 @@ export async function renderSearchPage(app: HTMLDivElement) {
   });
 
   const buttonPlaylist: HTMLButtonElement = document.createElement("button");
+
   buttonPlaylist.textContent = "Перейти на страницу плейлиста";
   buttonPlaylist.dataset.page = "playlist";
-
-  const buttonDetails: HTMLButtonElement = document.createElement("button");
-  buttonDetails.textContent = "Перейти на страницу деталей";
-  buttonDetails.dataset.page = "details";
 
   const title: HTMLHeadingElement = document.createElement("h1");
   title.textContent = "Это страница поиска";
 
-  app.append(title, searchForm, buttonPlaylist, buttonDetails);
+  app.append(title, searchForm, buttonPlaylist);
   app.append(wrapperCards);
 
-  const results = await getBestPodcasts();
-  createCardsPodcasts(results);
+  const bestPodcasts = await getBestPodcasts();
+
+  bestPodcasts.forEach((podcast) => {
+    wrapperCards.append(createCardPodcast(podcast));
+  });
 
   buttonPlaylist.addEventListener("click", () => {
     const nextPage: string = buttonPlaylist.dataset.page || "/";
-    router.navigate(nextPage);
-  });
-
-  buttonDetails.addEventListener("click", () => {
-    const nextPage: string = buttonDetails.dataset.page || "/";
     router.navigate(nextPage);
   });
 }
@@ -84,62 +92,144 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(
   return element;
 }
 
-export interface ResultsApi {
-  artworkUrl160?: string;
-  releaseDate?: string;
-  artistName?: string;
-  artworkUrl600: string;
-  collectionId: number;
-  collectionName: string;
-  trackName: string;
-  shortDescription?: string;
-  trackTimeMillis: number;
-  description?: string;
-  trackViewUrl: string;
-  wrapperType: "podcastEpisode" | "track";
-  artworkUrl100: string;
+export interface PodcastSearch {
+  image: string;
+  id: number;
+  author: string;
+  title: string;
+  artWork: string;
 }
 
-export interface ResponsAPI {
-  results: ResultsApi[];
+export interface APIResponseSearch {
+  feeds: PodcastSearch[];
 }
 
-async function getBestPodcasts() {
+export interface PodcastTrend {
+  image: string;
+  id: number;
+  author: string;
+  title: string;
+  trendScore: number;
+  artWork: string;
+}
+
+export interface Podcast {
+  image: string;
+  id: number;
+  author: string;
+  title: string;
+  trendScore: number;
+  artWork: string;
+}
+
+export interface Episode {
+  image: string;
+  id: number;
+  title: string;
+  artWork: string;
+  description: string;
+  duration: number | null;
+  datePublishedPretty: string;
+  enclosureUrl: string;
+  feedImage: string;
+}
+
+export interface APIResponseEpisodes {
+  items: Episode[];
+}
+
+export interface APIResponseTrends {
+  feeds: PodcastTrend[];
+}
+
+export interface APIResponsePodcast {
+  feeds: Podcast[];
+}
+
+/* export interface APIRespons {
+  feeds: Podcast[];
+} */
+/* export interface ResponsAPISearchedPodcasts {
+  feeds: SearchedPodcast[];
+} */
+
+async function getBestPodcasts(): Promise<PodcastTrend[]> {
   try {
-    const url = `/.netlify/functions/search?term=${encodeURIComponent("javascript")}&media=podcast&limit=25`;
+    const url =
+      "/.netlify/functions/search?endpoint=podcasts/trending?pretty=true";
     const response = await fetch(url);
 
-    const data = (await response.json()) as ResponsAPI;
-    data.results.map((res) => console.log(res.collectionId));
-
-    console.log("Ответ от сервера с результатами лучших: ", data.results);
-    return data.results;
+    const data: APIResponseTrends = await response.json();
+    console.log(data);
+    return data.feeds;
   } catch (error) {
     console.log("error");
     throw error;
   }
 }
 
-export async function getSearchedPodcast(url: string) {
+export async function getSearchedPodcast(
+  url: string,
+): Promise<PodcastSearch[]> {
   try {
-    const response = await fetch(`${url}`);
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error();
     }
-    console.log(response.status);
 
-    const data = (await response.json()) as ResponsAPI;
+    const data: APIResponseSearch = await response.json();
 
-    if (!data.results || data.results.length === 0) {
+    /*     if (!data.feeds || data.feeds.length === 0) {
+      throw new Error();
+    } */
+
+    console.log("Ответ от сервера c результатом поиска обычного: ", data);
+    return data.feeds;
+  } catch (error) {
+    console.log("Ошибка запроса или ничего не найдено");
+    throw error;
+  }
+}
+
+export async function getEpisodesById(url: string): Promise<Episode[]> {
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
       throw new Error();
     }
 
-    console.log(
-      "Ответ от сервера с результатом поиска обычного: ",
-      data.results,
-    );
-    return data.results;
+    const data: APIResponseEpisodes = await response.json();
+
+    /*     if (!data.feeds || data.feeds.length === 0) {
+      throw new Error();
+    } */
+
+    console.log("Ответ от сервера c результатом поиска подкастов: ", data);
+    return data.items;
+  } catch (error) {
+    console.log("Ошибка запроса или ничего не найдено");
+    throw error;
+  }
+}
+
+export async function getPodcastById(url: string): Promise<APIResponsePodcast> {
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error();
+    }
+
+    const data: APIResponsePodcast = await response.json();
+
+    /*     if (!data.feeds || data.feeds.length === 0) {
+      throw new Error();
+    } */
+
+    console.log("Ответ от сервера c результатом поиска подкаста: ", data);
+    return data;
   } catch (error) {
     console.log("Ошибка запроса или ничего не найдено");
     throw error;
@@ -147,60 +237,88 @@ export async function getSearchedPodcast(url: string) {
 }
 
 async function handleSearchInput() {
-  let term = document.querySelector<HTMLInputElement>(".form__input")?.value;
-
-  let result;
+  let query = document.querySelector<HTMLInputElement>(".form__input")?.value;
 
   try {
-    if (term === "") {
-      result = await getBestPodcasts();
-      createCardsPodcasts(result);
+    console.log(!!query + " значение инпута");
+
+    if (query === "" || !query) {
+      const podcasts = await getBestPodcasts();
+      return podcasts;
     } else {
-      if (term) {
-        result = await getSearchedPodcast(
-          `/.netlify/functions/search?term=${encodeURIComponent(term)}&media=podcast&limit=25`,
-        );
-        createCardsPodcasts(result);
-      }
+      const podcasts = await getSearchedPodcast(
+        `/.netlify/functions/search?endpoint=search/byterm&q=${encodeURIComponent(query)}&pretty=true`,
+      );
+      return podcasts;
     }
   } catch (error) {
     console.log(error);
+    return null;
   }
 }
 
-function createCardsPodcasts(podcasts: ResultsApi[]) {
-  const container = document.querySelector<HTMLDivElement>(".wrapper-podcasts");
-  if (podcasts) {
-    container?.replaceChildren();
+function createCardPodcast(podcast: PodcastTrend | PodcastSearch) {
+  const card = createElement("div", {
+    className: "wrapper-podcasts__card card",
+  });
 
-    podcasts.forEach((podcast) => {
-      const card = createElement("div", {
-        className: "wrapper-podcasts__card card",
-      });
+  const imageCard = createElement("img", { className: "card__img" });
+  setPodcastImage(imageCard, podcast);
+  imageCard.loading = "lazy";
+  card.dataset.idPodcast = `${podcast.id}`;
 
-      const imageCard = createElement("img", { className: "card__img" });
-      imageCard.src = podcast.artworkUrl100;
-      card.dataset.idPodcast = `${podcast.collectionId}`;
+  const titleCard = createElement("p", {
+    className: "card__title",
+    text: podcast.title,
+  });
 
-      const titleCard = createElement("p", {
-        className: "card__title",
-        text: podcast.collectionName,
-      });
+  const authorText = createElement("p", {
+    className: "card__author",
+    text: podcast.author,
+  });
 
-      const authorText = createElement("p", {
-        className: "card__author",
-        text: podcast.artistName,
-      });
+  card.append(imageCard, titleCard, authorText);
 
-      card.append(imageCard, titleCard, authorText);
-      container?.append(card);
-
-      card.addEventListener("click", () => handleCardClick(card));
-    });
-  }
+  card.addEventListener("click", () => handleCardClick(podcast));
+  return card;
 }
 
-async function handleCardClick(card: HTMLDivElement) {
-  const id = card.dataset.idPodcast;
+export function setPodcastImage(
+  img: HTMLImageElement,
+  podcast: PodcastTrend | PodcastSearch,
+) {
+  const sources = [podcast.artWork, podcast.image, defaultImage];
+
+  let index = 0;
+
+  img.src = sources[index];
+  /*   let optimazedURL = sources[index]; */
+
+  img.onerror = () => {
+    index++;
+
+    if (index < sources.length) {
+      img.src = sources[index];
+    }
+  };
+}
+
+export function setEpisodeImage(img: HTMLImageElement, podcast: Episode) {
+  const sources = [podcast.image, podcast.feedImage, defaultImage];
+  let index = 0;
+  img.src = sources[index];
+  /*   let optimazedURL = sources[index]; */
+
+  img.onerror = () => {
+    index++;
+
+    if (index < sources.length) {
+      img.src = sources[index];
+    }
+  };
+}
+
+function handleCardClick(podcast: PodcastSearch | PodcastTrend) {
+  const id = podcast.id;
   router.navigate(`/details/${id}`);
 }

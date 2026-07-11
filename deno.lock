@@ -11,6 +11,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@types/node@^26.1.1",
         "npm:netlify-cli@^26.2.0",
         "npm:typescript@~6.0.2",
         "npm:vite@^8.1.1"
