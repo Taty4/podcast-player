@@ -26,7 +26,6 @@ export async function renderDetailsPodcastPage(
   });
 
   const type = createElement("p", { className: "podcast-header__type" });
-  type.textContent = "Podcast";
   const namePodcast = createElement("h1", {
     className: "podcast-header__title",
   });
@@ -41,7 +40,6 @@ export async function renderDetailsPodcastPage(
 
   const descrTitle = createElement("p", {
     className: "podcast-body__description-title",
-    text: "Descriptions",
   });
 
   const podcastDescription = createElement("p", {
@@ -60,10 +58,11 @@ export async function renderDetailsPodcastPage(
         `/.netlify/functions/search?endpoint=/podcasts/byfeedid?id=${encodeURIComponent(id)}&pretty=true`,
       ),
       getEpisodesById(
-        `/.netlify/functions/search?endpoint=episodes/byfeedid&id=${encodeURIComponent(id)}&max=100&pretty=true`,
+        `/.netlify/functions/search?endpoint=episodes/byfeedid&id=${encodeURIComponent(id)}&max=60&pretty=true`,
       ),
     ]);
-
+    type.textContent = "Podcast";
+    descrTitle.textContent = "Description";
     namePodcast.textContent = podcast.title;
     author.textContent = podcast.author;
     podcastDescription.textContent = podcast.description;
@@ -92,7 +91,7 @@ export async function renderDetailsPodcastPage(
     player.updateUI();
     playList.updateUI();
   } else {
-    console.log("Неверный адрес страницы");
+    ("Неверный адрес страницы");
   }
 }
 

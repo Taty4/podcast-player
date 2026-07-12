@@ -1,27 +1,26 @@
 :root {
-  --shadow: 0px 0px 15px 0px rgba(0, 0, 0, 0.15);
-  --border: 2px solid #3a2e2a;
+  --shadow: 0px 0px 18px 0px rgba(0, 0, 0, 0.35);
+  --border: 2px solid #5a3a2a;
 
-  --bg: #f6f8fb;
-  --surface: #ffffff;
-  --surface-secondary: #eef2f7;
+  --bg: #1f1714;
+  --surface: #2b201c;
+  --surface-secondary: #372720;
 
-  --text: #1e293b;
-  --text-secondary: #64748b;
+  --text: #f6e7dc;
+  --text-secondary: #c5a99a;
 
-  --border-color: #dce3ec;
+  --border-color: #5a4033;
 
-  --primary-100: #2ea8ff;
-  --primary-dark: #0077d9;
-  --primary--600: #0f8beb;
-  --primary-light: #8dccff;
-  --primary-600: #0f8beb;
+  --primary-100: #e3a06f;
+  --primary-dark: #b85f32;
+  --primary-600: #d47b47;
+  --primary-light: #f1c4a0;
 
-  --secondary: #a5b4d4;
-  --secondary-middle: #c4cbda;
-  --secondary-light: #e6f4ff;
+  --secondary: #8f6a55;
+  --secondary-middle: #b08a70;
+  --secondary-light: #4a342a;
 
-  --text-on-primary-100: #ffffff;
+  --text-on-primary-100: #2b1b14;
 }
 
 html {
@@ -143,7 +142,7 @@ body {
   background-color: var(--primary-100);
   cursor: pointer;
   border: none;
-  border-radius: 0.3rem;
+  border-radius: 0.5rem;
   color: var(--text);
   background-size: contain;
   background-repeat: no-repeat;
@@ -155,7 +154,7 @@ body {
 
 .form__btn-submit:hover {
   box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.15);
-  background-color: var(--primary-light);
+  background-color: var(--primary-600);
 }
 
 .wrapper-podcasts {
@@ -308,10 +307,6 @@ body {
   background-color: var(--secondary-middle);
 }
 
-.episode.current.playing .episode__title {
-  color: var(--secondary-light);
-}
-
 .episode.current.playing .episode-inner {
   background-color: var(--secondary);
 }
@@ -329,6 +324,7 @@ body {
   width: 100%;
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
 }
 
 .episode__info-wrapper {
@@ -375,6 +371,7 @@ body {
   border-radius: 50%;
   background-color: var(--secondary-light);
   cursor: pointer;
+  filter: brightness(120%);
   transition: transform 0.3s;
 }
 
@@ -398,18 +395,15 @@ body {
 /* Player */
 
 .player {
-  max-width: 1440px;
   width: 100%;
   padding: 1rem 3rem;
   display: flex;
   flex-direction: column;
-  background-color: var(--text-secondary);
+  background-color: var(--primary-100);
   position: fixed;
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  border-top-right-radius: 1rem;
-  border-top-left-radius: 1rem;
 }
 
 .player-bottom {
@@ -456,8 +450,8 @@ body {
 
 .player-btn {
   flex-shrink: 0;
-  width: 4rem;
-  height: 4rem;
+  width: 4.3rem;
+  height: 4.3rem;
   background-image: url(./assets/images/play.png);
   border: none;
   border-radius: 50%;
@@ -466,6 +460,7 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   cursor: pointer;
+  filter: brightness(120%);
   transition:
     transform 0.3s,
     background-color 0.3s;
@@ -490,7 +485,7 @@ body {
   padding: 0.7rem 1rem;
   border-radius: 0.5rem;
 
-  color: var(--text);
+  color: var(--text-on-primary-100);
   background-color: var(--primary-light);
   border: none;
   cursor: pointer;
@@ -498,8 +493,7 @@ body {
 }
 
 .btn-go-podcast:hover {
-  background-color: var(--surface);
-  color: var(--primary-600);
+  background-color: var(--primary-600);
 }
 
 .container-playlist-cards {
@@ -527,6 +521,7 @@ body {
 
 .episode-control {
   padding: 0.5rem 1rem;
+  flex-shrink: 0;
   margin-left: 1rem;
   border: 1px solid var(--primary-100);
   border-radius: 0.5rem;
@@ -537,8 +532,13 @@ body {
   color: var(--text);
 }
 
-.episode-control:hover {
-  background-color: var(--primary-light);
+.episode-control:disabled {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.episode-control:hover:not(:disabled) {
+  background-color: var(--primary-600);
 }
 
 .playlist-dafault-text {
@@ -547,4 +547,38 @@ body {
   margin-top: 3rem;
   max-width: 60rem;
   text-align: center;
+}
+
+.loader {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(3px);
+  z-index: 1000;
+}
+
+.loader.hidden {
+  display: none;
+}
+
+.loader__spinner {
+  width: 45px;
+  height: 45px;
+  border: 5px solid #ffd6cc;
+  border-top-color: #ff7256;
+  border-radius: 50%;
+  animation: loader-spin 0.8s linear infinite;
+}
+
+@keyframes loader-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }

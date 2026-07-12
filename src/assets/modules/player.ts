@@ -1,6 +1,7 @@
 import { createElement } from "./search-page";
 import type { Episode } from "./search-page";
 import { router } from "./router";
+import { saveEpisodeProgress, getEpisodeProgress } from "./episodes-progress";
 
 class Player {
   audio;
@@ -42,11 +43,25 @@ class Player {
 
     this.audio.addEventListener("timeupdate", () => {
       this.updateProgress();
+
+      if (!this.currentEpisode) return;
+
+      const now = Date.now();
+
+      if (now - this.lastSave < 1000) return;
+
+      this.lastSave = now;
+
       this.saveLastEpisode();
+      saveEpisodeProgress(this.currentEpisode.id, this.audio.currentTime);
     });
 
     this.audio.addEventListener("loadedmetadata", () => {
-      this.audio.currentTime = this.currentEpisode.lastCurrentTime ?? 0;
+      const progress = getEpisodeProgress();
+      const savedTime = progress[this.currentEpisode.id];
+      if (savedTime !== undefined) {
+        this.audio.currentTime = Math.max(savedTime - 10, 0);
+      }
       this.updateProgress();
       this.updateDuration();
     });
@@ -63,6 +78,7 @@ class Player {
     if (this.currentEpisode?.id !== episode.id) {
       this.currentEpisode = episode;
       this.audio.src = episode.enclosureUrl;
+      this.audio.load();
       this.audio.play();
       this.btnPlayer.classList.toggle("active", !this.audio.paused);
       this.updateUI();
@@ -94,13 +110,6 @@ class Player {
   }
 
   saveLastEpisode() {
-    if (!this.currentEpisode) return;
-
-    const now = Date.now();
-
-    if (now - this.lastSave < 1000) return;
-
-    this.lastSave = now;
     const episode = {
       ...this.currentEpisode,
       lastCurrentTime: Math.floor(this.audio.currentTime),

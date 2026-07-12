@@ -1,6 +1,7 @@
 import { router } from "./router";
 import defaultImage from "../images/default-cover.webp";
 import { renderHeader } from "./header";
+import { loader } from "./loader";
 
 let timerId: number | undefined;
 
@@ -29,7 +30,7 @@ export async function renderSearchPage(app: HTMLDivElement) {
           wrapperCards.append(card);
         });
       }
-    }, 500);
+    }, 2000);
   });
 
   const btnSubmitSearch = createElement("button", {
@@ -147,6 +148,7 @@ export interface APIResponsePodcast {
 }
 
 async function getBestPodcasts(): Promise<PodcastTrend[]> {
+  loader.show();
   try {
     const url =
       "/.netlify/functions/search?endpoint=podcasts/trending?pretty=true";
@@ -157,12 +159,15 @@ async function getBestPodcasts(): Promise<PodcastTrend[]> {
   } catch (error) {
     console.log(error);
     throw error;
+  } finally {
+    loader.hide();
   }
 }
 
 export async function getSearchedPodcast(
   url: string,
 ): Promise<PodcastSearch[]> {
+  loader.show();
   try {
     const response = await fetch(url);
 
@@ -175,10 +180,13 @@ export async function getSearchedPodcast(
   } catch (error) {
     console.log(error);
     throw error;
+  } finally {
+    loader.hide();
   }
 }
 
 export async function getEpisodesById(url: string): Promise<Episode[]> {
+  loader.show();
   try {
     const response = await fetch(url);
 
@@ -187,14 +195,18 @@ export async function getEpisodesById(url: string): Promise<Episode[]> {
     }
 
     const data: APIResponseEpisodes = await response.json();
+
     return data.items;
   } catch (error) {
     console.log(error);
     throw error;
+  } finally {
+    loader.hide();
   }
 }
 
 export async function getPodcastById(url: string): Promise<Podcast> {
+  loader.show();
   try {
     const response = await fetch(url);
 
@@ -208,6 +220,8 @@ export async function getPodcastById(url: string): Promise<Podcast> {
   } catch (error) {
     console.log(error);
     throw error;
+  } finally {
+    loader.hide();
   }
 }
 
