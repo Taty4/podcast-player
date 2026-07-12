@@ -39,7 +39,6 @@ class Router {
     const path = window.location.pathname;
     if (path.startsWith("/details/")) {
       const id = path.split("/")[2];
-      console.log(id);
       if (this.app) {
         this.app.replaceChildren();
         renderDetailsPodcastPage(this.app, id);
@@ -52,7 +51,7 @@ class Router {
           this.routes[path](this.app);
         }
       } else {
-        console.log("потом допишу страницу ошибки");
+        console.log("Ошибка");
       }
     }
   }

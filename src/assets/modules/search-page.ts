@@ -1,9 +1,12 @@
 import { router } from "./router";
-import defaultImage from "../images/default-cover.png";
+import defaultImage from "../images/default-cover.webp";
+import { renderHeader } from "./header";
 
 let timerId: number | undefined;
 
 export async function renderSearchPage(app: HTMLDivElement) {
+  app.append(renderHeader("search"));
+
   const searchForm = createElement("form", {
     className: "search__form form",
   });
@@ -26,11 +29,12 @@ export async function renderSearchPage(app: HTMLDivElement) {
           wrapperCards.append(card);
         });
       }
-    }, 3000);
+    }, 500);
   });
 
   const btnSubmitSearch = createElement("button", {
     className: "form__btn-submit",
+    text: "Search",
   });
 
   btnSubmitSearch.addEventListener("click", async (e) => {
@@ -52,15 +56,10 @@ export async function renderSearchPage(app: HTMLDivElement) {
     className: "search__wrapper-podcasts wrapper-podcasts",
   });
 
-  const buttonPlaylist: HTMLButtonElement = document.createElement("button");
-
-  buttonPlaylist.textContent = "Перейти на страницу плейлиста";
-  buttonPlaylist.dataset.page = "playlist";
-
   const title: HTMLHeadingElement = document.createElement("h1");
   title.textContent = "Это страница поиска";
 
-  app.append(title, searchForm, buttonPlaylist);
+  app.append(searchForm);
   app.append(wrapperCards);
 
   const bestPodcasts = await getBestPodcasts();
@@ -68,11 +67,6 @@ export async function renderSearchPage(app: HTMLDivElement) {
   bestPodcasts.forEach((podcast) => {
     const card = createCardPodcast(podcast);
     wrapperCards.append(card);
-  });
-
-  buttonPlaylist.addEventListener("click", () => {
-    const nextPage: string = buttonPlaylist.dataset.page || "/";
-    router.navigate(nextPage);
   });
 }
 
@@ -132,6 +126,8 @@ export interface Episode {
   enclosureUrl: string;
   feedImage: string;
   feedId: number;
+  currentTime: number;
+  feedTitle: string;
 }
 
 export interface APIResponseEpisodes {
@@ -157,10 +153,9 @@ async function getBestPodcasts(): Promise<PodcastTrend[]> {
     const response = await fetch(url);
 
     const data: APIResponseTrends = await response.json();
-    console.log("Результата поиска лучших подкастов: ", data.feeds);
     return data.feeds;
   } catch (error) {
-    console.log("error");
+    console.log(error);
     throw error;
   }
 }
@@ -176,15 +171,9 @@ export async function getSearchedPodcast(
     }
 
     const data: APIResponseSearch = await response.json();
-
-    /*     if (!data.feeds || data.feeds.length === 0) {
-      throw new Error();
-    } */
-
-    console.log("Ответ от сервера c результатом поиска обычного: ", data);
     return data.feeds;
   } catch (error) {
-    console.log("Ошибка запроса или ничего не найдено");
+    console.log(error);
     throw error;
   }
 }
@@ -198,15 +187,9 @@ export async function getEpisodesById(url: string): Promise<Episode[]> {
     }
 
     const data: APIResponseEpisodes = await response.json();
-
-    /*     if (!data.feeds || data.feeds.length === 0) {
-      throw new Error();
-    } */
-
-    console.log("Ответ от сервера c результатом поиска подкастов: ", data);
     return data.items;
   } catch (error) {
-    console.log("Ошибка запроса или ничего не найдено");
+    console.log(error);
     throw error;
   }
 }
@@ -221,14 +204,9 @@ export async function getPodcastById(url: string): Promise<Podcast> {
 
     const data: APIResponsePodcast = await response.json();
 
-    /*     if (!data.feeds || data.feeds.length === 0) {
-      throw new Error();
-    } */
-
-    console.log("Ответ от сервера c результатом поиска подкаста: ", data);
     return data.feed;
   } catch (error) {
-    console.log("Ошибка запроса или ничего не найдено");
+    console.log(error);
     throw error;
   }
 }
@@ -237,8 +215,6 @@ async function handleSearchInput() {
   let query = document.querySelector<HTMLInputElement>(".form__input")?.value;
 
   try {
-    console.log(!!query + " значение инпута");
-
     if (query === "" || !query) {
       const podcasts = await getBestPodcasts();
       return podcasts;
@@ -297,40 +273,27 @@ function handleCardClick(podcast: PodcastSearch | PodcastTrend) {
   router.navigate(`/details/${id}`);
 }
 
-/**
- * Проверяет ссылки по очереди и возвращает первую рабочую,
- * либо дефолтную, если обе ссылки битые.
- *
- * @param url1 - Первая ссылка для проверки
- * @param url2 - Вторая (запасная) ссылка
- * @returns Рабочий URL картинки
- */
 export async function getSmallValidImg(
   url1: string,
   url2: string,
   size: number,
 ): Promise<string> {
-  // Вспомогательная функция для проверки одной картинки
-  // Явно указываем, что промис возвращает boolean
   const checkImage = (src: string, size: number): Promise<boolean> => {
     return new Promise<boolean>((resolve) => {
       const img: HTMLImageElement = new Image();
       img.src = `https://wsrv.nl?url=${encodeURIComponent(src)}&w=${size}&fit=cover`;
-      img.onload = () => resolve(true); // Ссылка рабочая
-      img.onerror = () => resolve(false); // Ссылка битая
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
     });
   };
 
-  // 1. Проверяем первую картинку
   const isFirstValid: boolean = await checkImage(url1, size);
   if (isFirstValid)
     return `https://wsrv.nl?url=${encodeURIComponent(url1)}&w=${size}&fit=cover`;
 
-  // 2. Если первая битая, проверяем вторую
   const isSecondValid: boolean = await checkImage(url2, size);
   if (isSecondValid)
     return `https://wsrv.nl?url=${encodeURIComponent(url2)}&w=${size}&fit=cover`;
 
-  // 3. Если обе битые, возвращаем дефолтную
   return defaultImage;
 }

@@ -1,5 +1,5 @@
-/* import { router } from "./router"; */
-import defaultImage from "../images/default-cover.png";
+import defaultImage from "../images/default-cover.webp";
+import { renderHeader } from "./header";
 import { player } from "./player";
 import {
   getEpisodesById,
@@ -7,34 +7,15 @@ import {
   getPodcastById,
   loadImage,
 } from "./search-page";
+
+import { playList } from "./playList-page";
 import type { Episode } from "./search-page";
-/* import { player } from "./player"; */
+
 export async function renderDetailsPodcastPage(
   app: HTMLDivElement,
   id?: string,
 ) {
-  /*  const buttonSearch: HTMLButtonElement = document.createElement("button");
-  buttonSearch.textContent = "Перейти на страницу поиска";
-  buttonSearch.dataset.page = "/";
-
-  const buttonPlaylist: HTMLButtonElement = document.createElement("button");
-  buttonPlaylist.textContent = "Перейти на страницу плейлиста";
-  buttonPlaylist.dataset.page = "playlist";
-
-  const title: HTMLHeadingElement = document.createElement("h1");
-  title.textContent = "Это страница деталий подкаста";
-
-  app.append(buttonSearch, buttonPlaylist);
-
-  buttonSearch.addEventListener("click", () => {
-    const nextPage: string = buttonSearch.dataset.page || "/";
-    router.navigate(nextPage);
-  });
-
-  buttonPlaylist.addEventListener("click", () => {
-    const nextPage: string = buttonPlaylist.dataset.page || "/";
-    router.navigate(nextPage);
-  }); */
+  app.append(renderHeader("details"));
 
   const header = createElement("div", { className: "podcast-header" });
   const imgHeader = createElement("div", {
@@ -58,30 +39,16 @@ export async function renderDetailsPodcastPage(
     className: "podcast-body__container-episodes",
   });
 
-  /*   containerEpisodes.addEventListener("click", (event: MouseEvent) => {
-    const target = event.target as HTMLElement; 
-
-
-    const btn = target.closest<HTMLButtonElement>(".episode__btn-play");
-
-
-    if (btn && containerEpisodes.contains(btn)) {
-      const allBtns = containerEpisodes.querySelectorAll(".episode__btn-play");
-   
-      allBtns.forEach((btn) => {
-        btn.classList.remove("active");
-      });
-    }
-    if (!player.audio.paused) {
-      btn?.classList.add("active");
-    }
-  }); */
+  const descrTitle = createElement("p", {
+    className: "podcast-body__description-title",
+    text: "Descriptions",
+  });
 
   const podcastDescription = createElement("p", {
     className: "podcast-body__description",
   });
 
-  podcastBody.append(podcastDescription, containerEpisodes);
+  podcastBody.append(descrTitle, podcastDescription, containerEpisodes);
 
   wrapperInfoHeader.append(type, namePodcast, author);
   header.append(imgHeader, wrapperInfoHeader);
@@ -110,21 +77,32 @@ export async function renderDetailsPodcastPage(
     loadImage(imgPodcast, podcast.image, podcast.artWork, 400);
 
     listEpisodes.forEach((episode) => {
-      const cardEpisode = renderEpisode(episode);
+      const btnAddPlaylist = createElement("button", {
+        className: "btn-add-episode",
+        text: "Add playlist",
+      });
+      btnAddPlaylist.addEventListener("click", () => {
+        playList.addEpisode(episode, podcast.title);
+      });
+
+      const cardEpisode = renderEpisode(episode, btnAddPlaylist);
       containerEpisodes.append(cardEpisode);
     });
 
     player.updateUI();
+    playList.updateUI();
   } else {
     console.log("Неверный адрес страницы");
   }
 }
 
-function renderEpisode(episode: Episode) {
+export function renderEpisode(episode: Episode, btnAction: HTMLButtonElement) {
   const card = createElement("div", {
     className: "podcast-body__episode episode",
   });
   card.dataset.id = String(episode.id);
+
+  const innerContainer = createElement("div", { className: "episode-inner" });
 
   const smallImg = createElement("img", {
     className: "episode__image",
@@ -136,10 +114,15 @@ function renderEpisode(episode: Episode) {
     className: "episode__info-wrapper",
   });
 
+  const topEp = createElement("div", { className: "episode-top" });
+
   const titleEpisode = createElement("h3", {
     className: "episode__title",
   });
   titleEpisode.textContent = episode.title;
+
+  btnAction.dataset.id = String(episode.id);
+  btnAction.classList.add("episode-control");
 
   const description = createElement("div", {
     className: "episode__description",
@@ -174,8 +157,10 @@ function renderEpisode(episode: Episode) {
   });
   episodDate.textContent = episode.datePublishedPretty;
 
-  card.append(smallImg, infoWrapper);
-  infoWrapper.append(titleEpisode, description, metaEpisode);
+  card.append(innerContainer);
+  innerContainer.append(smallImg, infoWrapper);
+  topEp.append(titleEpisode, btnAction);
+  infoWrapper.append(topEp, description, metaEpisode);
   episodMetaLeft.append(episodeBtnPlay, episodeDuration);
   metaEpisode.append(episodMetaLeft, episodDate);
 
@@ -191,15 +176,3 @@ const getFormatDuration = (durationSec: number | null) => {
   }
   return "00 min 00 sec";
 };
-
-/* const getFormatDateRealize = (stringDate: string) => {
-  const date = new Date(stringDate);
-
-  const stringMonth = date.toLocaleDateString("ru-RU", {
-    month: "long",
-    day: "numeric",
-  });
-
-  const year = date.getFullYear().toString();
-  return `${stringMonth} ${year}`;
-}; */

@@ -51,10 +51,6 @@ class Player {
       this.updateDuration();
     });
 
-    this.audio.addEventListener("ended", () => {
-      this.updateUI();
-    });
-
     this.inputEl.addEventListener("input", () => {
       this.audio.currentTime = Number(this.inputEl.value);
     });
@@ -114,6 +110,7 @@ class Player {
   }
 
   updateUI() {
+    if (!this.currentEpisode) return;
     const isPlaying = !this.audio.paused;
 
     this.btnPlayer.classList.toggle("active", isPlaying);
