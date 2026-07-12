@@ -111,7 +111,7 @@ class PlayList {
 
     const p = createElement("p", {
       className: "playlist-dafault-text",
-      text: "You haven't added any episodes to the playlist yet. Go to the search page to do so",
+      text: "You haven't added any episodes to the playlist yet. Go to the search page to do",
     });
     container?.append(p);
   }
