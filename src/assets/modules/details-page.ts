@@ -1,5 +1,6 @@
 /* import { router } from "./router"; */
 import defaultImage from "../images/default-cover.png";
+import { player } from "./player";
 import {
   getEpisodesById,
   createElement,
@@ -57,6 +58,25 @@ export async function renderDetailsPodcastPage(
     className: "podcast-body__container-episodes",
   });
 
+  /*   containerEpisodes.addEventListener("click", (event: MouseEvent) => {
+    const target = event.target as HTMLElement; 
+
+
+    const btn = target.closest<HTMLButtonElement>(".episode__btn-play");
+
+
+    if (btn && containerEpisodes.contains(btn)) {
+      const allBtns = containerEpisodes.querySelectorAll(".episode__btn-play");
+   
+      allBtns.forEach((btn) => {
+        btn.classList.remove("active");
+      });
+    }
+    if (!player.audio.paused) {
+      btn?.classList.add("active");
+    }
+  }); */
+
   const podcastDescription = createElement("p", {
     className: "podcast-body__description",
   });
@@ -87,12 +107,14 @@ export async function renderDetailsPodcastPage(
     imgPodcast.src = defaultImage;
 
     imgHeader.append(imgPodcast);
-    loadImage(imgPodcast, podcast, 400);
+    loadImage(imgPodcast, podcast.image, podcast.artWork, 400);
 
-    listEpisodes.forEach(async (episode) => {
+    listEpisodes.forEach((episode) => {
       const cardEpisode = renderEpisode(episode);
       containerEpisodes.append(cardEpisode);
     });
+
+    player.updateUI();
   } else {
     console.log("Неверный адрес страницы");
   }
@@ -100,51 +122,55 @@ export async function renderDetailsPodcastPage(
 
 function renderEpisode(episode: Episode) {
   const card = createElement("div", {
-    className: "podcast-body__episode episod",
+    className: "podcast-body__episode episode",
   });
+  card.dataset.id = String(episode.id);
 
   const smallImg = createElement("img", {
-    className: "episod__image",
+    className: "episode__image",
   });
   smallImg.src = defaultImage;
   smallImg.loading = "lazy";
 
   const infoWrapper = createElement("div", {
-    className: "episod__info-wrapper",
+    className: "episode__info-wrapper",
   });
 
   const titleEpisode = createElement("h3", {
-    className: "episod__title",
+    className: "episode__title",
   });
   titleEpisode.textContent = episode.title;
 
   const description = createElement("div", {
-    className: "episod__description",
+    className: "episode__description",
   });
   const temp = createElement("div");
   temp.innerHTML = episode.description;
   description.textContent = temp.textContent || "";
 
   const metaEpisode = createElement("div", {
-    className: "episod__meta",
+    className: "episode__meta",
   });
 
   const episodMetaLeft = createElement("div", {
-    className: "episod__meta-left",
+    className: "episode__meta-left",
   });
 
   const episodeBtnPlay = createElement("button", {
-    className: "episod__btn-play",
+    className: "episode__btn-play",
   });
-  episodeBtnPlay.textContent = "▶";
+  episodeBtnPlay.dataset.id = `${episode.id}`;
+  episodeBtnPlay.addEventListener("click", () => {
+    player.toggleEpisode(episode);
+  });
 
   const episodeDuration = createElement("p", {
-    className: "episod__duration",
+    className: "episode__duration",
   });
   episodeDuration.textContent = getFormatDuration(episode.duration);
 
   const episodDate = createElement("p", {
-    className: "episod__date",
+    className: "episode__date",
   });
   episodDate.textContent = episode.datePublishedPretty;
 
@@ -153,7 +179,7 @@ function renderEpisode(episode: Episode) {
   episodMetaLeft.append(episodeBtnPlay, episodeDuration);
   metaEpisode.append(episodMetaLeft, episodDate);
 
-  loadImage(smallImg, episode, 160);
+  loadImage(smallImg, episode.image, episode.feedImage, 160);
   return card;
 }
 

@@ -1,57 +1,217 @@
 import { createElement } from "./search-page";
+import type { Episode } from "./search-page";
+import { router } from "./router";
 
 class Player {
-  app;
-  player;
   audio;
-  btn;
+  private elements;
+  private player: HTMLElement;
+  private nameEpisode: HTMLElement;
+  private btnPlayer: HTMLElement;
+  private btnGoToPodacst: HTMLElement;
+  private currentEpisode;
+  private currentTimeEl: HTMLElement;
+  private inputEl: HTMLInputElement;
+  private durationEl: HTMLElement;
+  private lastSave = 0;
 
   constructor() {
-    this.player = createElement("div", { className: "player" });
-    this.app = document.querySelector<HTMLDivElement>(".app");
-    this.btn = createElement("button", { className: "player-play" });
-    this.btn.disabled = true;
     this.audio = new Audio();
-    if (this.app) {
-      this.app.append(this.player);
+    this.elements = createUIPlayer();
+    this.currentEpisode = this.elements.lastEpisode;
+    if (this.currentEpisode) this.audio.src = this.currentEpisode?.enclosureUrl;
+    this.player = this.elements.player;
+    this.nameEpisode = this.elements.nameEpisode;
+    this.btnPlayer = this.elements.playerBTN;
+    this.btnGoToPodacst = this.elements.btnGoToPdcast;
+    this.currentTimeEl = this.elements.currentTime;
+    this.inputEl = this.elements.inputPlayer;
+    this.durationEl = this.elements.duration;
+
+    this.addListeners();
+  }
+
+  addListeners() {
+    this.btnPlayer.addEventListener("click", () => {
+      this.toogleCurrent();
+    });
+
+    this.btnGoToPodacst.addEventListener("click", () => {
+      this.goToPodcast();
+    });
+
+    this.audio.addEventListener("timeupdate", () => {
+      this.updateProgress();
+      this.saveLastEpisode();
+    });
+
+    this.audio.addEventListener("loadedmetadata", () => {
+      this.audio.currentTime = this.currentEpisode.lastCurrentTime ?? 0;
+      this.updateProgress();
+      this.updateDuration();
+    });
+
+    this.audio.addEventListener("ended", () => {
+      this.updateUI();
+    });
+
+    this.inputEl.addEventListener("input", () => {
+      this.audio.currentTime = Number(this.inputEl.value);
+    });
+  }
+
+  toggleEpisode(episode: Episode) {
+    this.show();
+    this.saveLastEpisode();
+    this.nameEpisode.textContent = episode.title;
+    if (this.currentEpisode?.id !== episode.id) {
+      this.currentEpisode = episode;
+      this.audio.src = episode.enclosureUrl;
+      this.audio.play();
+      this.btnPlayer.classList.toggle("active", !this.audio.paused);
+      this.updateUI();
+      return;
     }
-    this.createPlayer();
+
+    if (this.audio.paused) {
+      this.audio.play();
+    } else {
+      this.audio.pause();
+    }
+    this.updateUI();
   }
 
-  createPlayer() {
-    console.log("player");
-    const inputPlayer = createElement("input", { className: "player-input" });
-    inputPlayer.name = "player";
-    inputPlayer.type = "range";
-    inputPlayer.max = "100";
-    inputPlayer.min = "0";
-    inputPlayer.step = "1";
+  toogleCurrent() {
+    if (!this.currentEpisode) return;
 
-    const playerTime = createElement("p", {
-      className: "player-time",
-      text: "00:00 / 00:00",
-    });
-
-    this.btn.addEventListener("click", () => {
-      if (this.audio.paused) {
-        this.audio.play();
-        this.btn.textContent = "Пауза";
-      } else {
-        this.audio.pause();
-        this.btn.textContent = "Играть";
-      }
-    });
-
-    this.player.append(this.btn, inputPlayer, playerTime);
+    if (this.audio.paused) {
+      this.audio.play();
+    } else {
+      this.audio.pause();
+      this.saveLastEpisode();
+    }
+    this.updateUI();
   }
 
-  play(url: string) {
-    this.player.classList.add("visible");
-    this.btn.disabled = false;
-    this.audio.src = url;
-    this.audio.load();
-    this.audio.play();
+  show() {
+    this.player.classList.remove("hidden");
+  }
+
+  saveLastEpisode() {
+    if (!this.currentEpisode) return;
+
+    const now = Date.now();
+
+    if (now - this.lastSave < 1000) return;
+
+    this.lastSave = now;
+    const episode = {
+      ...this.currentEpisode,
+      lastCurrentTime: Math.floor(this.audio.currentTime),
+    };
+
+    localStorage.setItem("lastEpisode", JSON.stringify(episode));
+  }
+
+  updateUI() {
+    const isPlaying = !this.audio.paused;
+
+    this.btnPlayer.classList.toggle("active", isPlaying);
+
+    document.querySelectorAll<HTMLDivElement>(".episode").forEach((episode) => {
+      const isCurrent = episode.dataset.id === String(this.currentEpisode.id);
+
+      episode.classList.toggle("current", isCurrent);
+      episode.classList.toggle("playing", isCurrent && isPlaying);
+    });
+
+    document
+      .querySelectorAll<HTMLButtonElement>(".episode__btn-play")
+      .forEach((btn) => {
+        const isCurrent = btn.dataset.id === String(this.currentEpisode.id);
+
+        btn.classList.toggle("active", isCurrent && isPlaying);
+      });
+  }
+
+  goToPodcast() {
+    router.navigate(`/details/${this.currentEpisode?.feedId}`);
+    this.updateUI();
+  }
+
+  private updateProgress() {
+    const current = this.audio.currentTime;
+
+    this.currentTimeEl.textContent = this.formatTime(current);
+
+    this.inputEl.value = String(current);
+  }
+
+  private formatTime(seconds: number) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+
+    return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
+
+  private updateDuration() {
+    this.inputEl.max = String(this.audio.duration);
+
+    this.durationEl.textContent = this.formatTime(this.audio.duration);
   }
 }
 
 export const player = new Player();
+
+export function createUIPlayer() {
+  const body: HTMLElement = document.body;
+  const savedEpisode = localStorage.getItem("lastEpisode");
+  const lastEpisode = savedEpisode ? JSON.parse(savedEpisode) : null;
+
+  const player = createElement("div", { className: "player" });
+
+  const topPlayer = createElement("div", { className: "player-top" });
+
+  const btnGoToPdcast = createElement("button", {
+    className: "btn-go-podcast",
+  });
+  btnGoToPdcast.textContent = "Go to playing podcast";
+  const nameEpisode = createElement("p", { className: "player-name-episode" });
+
+  topPlayer.append(nameEpisode, btnGoToPdcast);
+
+  const bottomPart = createElement("div", { className: "player-bottom" });
+
+  const playerBTN = createElement("button", { className: "player-btn" });
+  const inputPlayer = createElement("input", { className: "player-input" });
+  inputPlayer.type = "range";
+  inputPlayer.name = "player";
+  const updateTime = createElement("div", { className: "player-time" });
+  const currentTime = createElement("span", {
+    className: "player-current-time",
+  });
+  const duration = createElement("span", { className: "player-duration" });
+  updateTime.append(currentTime, "/", duration);
+
+  bottomPart.append(playerBTN, inputPlayer, updateTime);
+
+  player.append(topPlayer, bottomPart);
+  body.append(player);
+
+  if (!lastEpisode) {
+    player.classList.add("hidden");
+  } else {
+    nameEpisode.textContent = lastEpisode.title;
+  }
+
+  return {
+    player,
+    nameEpisode,
+    playerBTN,
+    currentTime,
+    duration,
+    inputPlayer,
+    btnGoToPdcast,
+    lastEpisode,
+  };
+}

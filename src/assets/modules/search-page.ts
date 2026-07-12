@@ -131,6 +131,7 @@ export interface Episode {
   datePublishedPretty: string;
   enclosureUrl: string;
   feedImage: string;
+  feedId: number;
 }
 
 export interface APIResponseEpisodes {
@@ -276,16 +277,17 @@ function createCardPodcast(podcast: PodcastTrend | PodcastSearch) {
   card.append(imageCard, titleCard, authorText);
 
   card.addEventListener("click", () => handleCardClick(podcast));
-  loadImage(imageCard, podcast, 250);
+  loadImage(imageCard, podcast.image, podcast.artWork, 250);
   return card;
 }
 
 export async function loadImage(
   img: HTMLImageElement,
-  podcast: PodcastTrend | Episode | PodcastSearch,
+  url1: string,
+  url2: string,
   size: number,
 ) {
-  const src = await getSmallValidImg(podcast.image, podcast.artWork, size);
+  const src = await getSmallValidImg(url1, url2, size);
 
   img.src = src;
 }
