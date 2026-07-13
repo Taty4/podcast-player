@@ -1,6 +1,5 @@
 import "./style.css";
-/* import typescriptLogo from "./assets/typescript.svg";
-import viteLogo from "./assets/vite.svg"; */
-import { router } from "./assets/modules/router";
+import "./assets/modules/router";
+import { loader } from "./assets/modules/loader";
 
-router.routes;
+document.body.append(loader.element);

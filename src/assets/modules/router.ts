@@ -3,7 +3,7 @@ import { renderDetailsPodcastPage } from "./details-page";
 import { renderPlayListPage } from "./playList-page";
 
 type Routes = {
-  [key: string]: (app: HTMLDivElement) => void;
+  [key: string]: (app: HTMLDivElement, id?: string) => void;
 };
 
 const routes: Routes = {
@@ -37,14 +37,22 @@ class Router {
 
   renderCurrentPage() {
     const path = window.location.pathname;
-
-    if (path in this.routes) {
+    if (path.startsWith("/details/")) {
+      const id = path.split("/")[2];
       if (this.app) {
         this.app.replaceChildren();
-        this.routes[path](this.app);
+        renderDetailsPodcastPage(this.app, id);
+        return;
       }
     } else {
-      console.log("потом допишу страницу ошибки");
+      if (path in this.routes) {
+        if (this.app) {
+          this.app.replaceChildren();
+          this.routes[path](this.app);
+        }
+      } else {
+        console.log("Ошибка");
+      }
     }
   }
 }
